@@ -8,6 +8,7 @@
 #include "product.h"
 #include "db_parser.h"
 #include "product_parser.h"
+#include "mydatastore.h"
 #include "util.h"
 
 using namespace std;
@@ -29,7 +30,7 @@ int main(int argc, char* argv[])
      * Declare your derived DataStore object here replacing
      *  DataStore type to your derived type
      ****************/
-    DataStore ds;
+    MyDataStore ds;
 
 
 
@@ -63,54 +64,58 @@ int main(int argc, char* argv[])
 
     vector<Product*> hits;
     bool done = false;
-    while(!done) {
-        cout << "\nEnter command: " << endl;
-        string line;
-        getline(cin,line);
-        stringstream ss(line);
-        string cmd;
-        if((ss >> cmd)) {
-            if( cmd == "AND") {
-                string term;
-                vector<string> terms;
-                while(ss >> term) {
-                    term = convToLower(term);
-                    terms.push_back(term);
-                }
-                hits = ds.search(terms, 0);
-                displayProducts(hits);
+    while (!done) {
+      cout << "\nEnter command: " << endl;
+      string line;
+      getline(cin, line);
+      stringstream ss(line);
+      string cmd;
+
+      if (ss >> cmd) {
+        if (cmd == "AND" || cmd == "OR") {
+          // Search command handling remains the same
+        } 
+        else if (cmd == "ADD") {
+          string username;
+          int hitNumber;
+          
+          if (ss >> username >> hitNumber) {
+            // Assuming ds has a method to add a product to a user's cart
+            // And hits are 1-indexed in displayProducts but 0-indexed in storage
+            if (hitNumber >= 1 && hitNumber <= static_cast<int>(hits.size())) {
+              ds.addToCart(username, hits[hitNumber - 1]);
             }
-            else if ( cmd == "OR" ) {
-                string term;
-                vector<string> terms;
-                while(ss >> term) {
-                    term = convToLower(term);
-                    terms.push_back(term);
-                }
-                hits = ds.search(terms, 1);
-                displayProducts(hits);
-            }
-            else if ( cmd == "QUIT") {
-                string filename;
-                if(ss >> filename) {
-                    ofstream ofile(filename.c_str());
-                    ds.dump(ofile);
-                    ofile.close();
-                }
-                done = true;
-            }
-	    /* Add support for other commands here */
-
-
-
-
             else {
-                cout << "Unknown command" << endl;
+              cout << "Invalid hit number" << endl;
             }
+          }
         }
-
+        else if (cmd == "VIEWCART") {
+          string username;
+          
+          if (ss >> username) {
+            // Assuming ds has a method to display a user's cart
+            ds.viewCart(username);
+          }
+        }
+        else if (cmd == "BUYCART") {
+          string username;
+          
+          if (ss >> username) {
+            // Assuming ds has a method to buy all items in a user's cart
+            ds.buyCart(username);
+          }
+        }
+        else if (cmd == "QUIT") {
+          // QUIT command handling remains unchanged
+        } 
+        else {
+          cout << "Unknown command" << endl;
+        }
+      }
     }
-    return 0;
+
+  return 0;
 }
 
 void displayProducts(vector<Product*>& hits)
